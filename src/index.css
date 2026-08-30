@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — ported 1:1 from the sandbox prototype's CSS custom properties. */
+  --color-ink: #0e2a32;
+  --color-ink-soft: #1c3b44;
+  --color-paper: #f2efe6;
+  --color-paper-dim: #e7e1d2;
+  --color-card: #ffffff;
+  --color-kelp: #3f6b5e;
+  --color-kelp-deep: #2c4e44;
+  --color-gold: #e0a63a;
+  --color-gold-deep: #b8801f;
+  --color-rust: #b0432e;
+  --color-line: rgba(14, 42, 50, 0.14);
+  --color-line-strong: rgba(14, 42, 50, 0.28);
+
+  --font-serif: 'Fraunces', serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
+/*
+ * These base element defaults must live inside Tailwind's `base` layer.
+ * Cascade layers take priority strictly by layer order regardless of
+ * selector specificity — un-layered rules would otherwise always beat
+ * Tailwind's `utilities` layer (e.g. a plain `h2 { color }` rule would
+ * override a `text-paper` utility class applied to an <h2>).
+ */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-ink);
+    letter-spacing: -0.01em;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: 14px;
+  }
+}
