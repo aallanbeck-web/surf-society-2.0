@@ -1,10 +1,24 @@
-import { SectionHead, MiniBtn, Pill } from '../../components/ui'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { SectionHead, MiniBtn, Pill, Select } from '../../components/ui'
 import { useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
+import { sizeToInches } from '../../lib/format'
+
+type SortKey = 'featured' | 'size' | 'type'
 
 export default function Rentals() {
+  const navigate = useNavigate()
   const { rentalPricing, boards } = useAppState()
-  const available = boards.filter((b) => b.status === 'available')
+  const [sort, setSort] = useState<SortKey>('featured')
+
+  const sorted = useMemo(() => {
+    if (sort === 'featured') return boards
+    const copy = [...boards]
+    if (sort === 'size') copy.sort((a, b) => sizeToInches(a.size) - sizeToInches(b.size))
+    if (sort === 'type') copy.sort((a, b) => a.type.localeCompare(b.type))
+    return copy
+  }, [boards, sort])
 
   return (
     <>
@@ -27,9 +41,26 @@ export default function Rentals() {
         ))}
       </div>
 
-      <SectionHead title="Available now" size="sm" />
+      <SectionHead
+        title="The quiver"
+        size="sm"
+        action={
+          <div className="flex items-center gap-2">
+            <label className="text-[12.5px] font-semibold text-ink-soft">Sort by</label>
+            <Select
+              className="px-2.5 py-1.5 text-[13px]"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+            >
+              <option value="featured">Featured</option>
+              <option value="size">Size (small to large)</option>
+              <option value="type">Type (A–Z)</option>
+            </Select>
+          </div>
+        }
+      />
       <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-        {available.map((b) => (
+        {sorted.map((b) => (
           <div key={b.id} className="bg-card border border-line rounded-xl overflow-hidden">
             <div className="aspect-[4/3] bg-paper-dim flex items-center justify-center overflow-hidden">
               <img src={b.photo || svgBoard(b.tint)} alt={b.name} className="w-full h-full object-cover" />
@@ -40,8 +71,15 @@ export default function Rentals() {
                 {b.brand} · {b.type} · {b.size}
               </div>
               <div className="flex justify-between items-center mt-2.5">
-                <Pill variant="available">Available</Pill>
-                <MiniBtn tone="checkout">Reserve</MiniBtn>
+                <Pill variant={b.status === 'available' ? 'available' : 'out'}>
+                  {b.status === 'available' ? 'Available' : 'Checked out'}
+                </Pill>
+                <div className="flex gap-1.5">
+                  <MiniBtn onClick={() => navigate(`/reviews?board=${encodeURIComponent(b.name)}`)}>Reviews</MiniBtn>
+                  <MiniBtn tone="checkout" onClick={() => navigate(`/rentals/reserve/${b.id}`)}>
+                    Reserve
+                  </MiniBtn>
+                </div>
               </div>
             </div>
           </div>

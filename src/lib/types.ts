@@ -12,6 +12,10 @@ export interface Board {
   tint: string
   outTo?: string | null
   outSince?: string | null
+  /** Friendly display string for when this board is expected back, e.g. "Today, 6:00 PM". Only set while checked out. */
+  dueBack?: string | null
+  /** True when a checked-out board is past its expected return. */
+  isPastDue?: boolean
 }
 
 export type MemberStatus = 'active' | 'inactive'

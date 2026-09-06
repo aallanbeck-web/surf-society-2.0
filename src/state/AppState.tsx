@@ -33,6 +33,11 @@ interface JoinInput {
   tier: string
 }
 
+/** A member is eligible to have a board checked out to them: active membership, payment current. */
+export function isMemberEligible(member: Member): boolean {
+  return member.status === 'active' && member.paymentStatus === 'current'
+}
+
 interface AppStateValue {
   // data
   boards: Board[]
@@ -42,6 +47,7 @@ interface AppStateValue {
   rentalPricing: typeof initialRentalPricing
   currentMemberView: string
   joinSuccess: Member | null
+  isSignedIn: boolean
 
   // derived
   currentMember: Member
@@ -66,10 +72,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [activity, setActivity] = useState<ActivityEntry[]>(initialActivity)
   const [currentMemberView, setCurrentMemberView] = useState('Priya Nair')
   const [joinSuccess, setJoinSuccess] = useState<Member | null>(null)
+  const [isSignedIn, setIsSignedIn] = useState(false)
 
   const checkOutBoard = (boardId: number, memberName: string) => {
+    const member = members.find((m) => m.name === memberName)
+    // Defense in depth — the staff UI only ever offers eligible members, but never let an
+    // inactive or past-due account walk out with a board even if this gets called directly.
+    if (!member || !isMemberEligible(member)) return
+
     setBoards((prev) =>
-      prev.map((b) => (b.id === boardId ? { ...b, status: 'out', outTo: memberName, outSince: 'Just now' } : b)),
+      prev.map((b) =>
+        b.id === boardId
+          ? { ...b, status: 'out', outTo: memberName, outSince: 'Just now', dueBack: 'Today, 6:00 PM', isPastDue: false }
+          : b,
+      ),
     )
     const board = boards.find((b) => b.id === boardId)
     if (board) {
@@ -82,7 +98,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (board) {
       setActivity((prev) => [{ time: 'Just now', text: `${board.outTo} checked in ${board.name}` }, ...prev])
     }
-    setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, status: 'available', outTo: null, outSince: null } : b)))
+    setBoards((prev) =>
+      prev.map((b) =>
+        b.id === boardId ? { ...b, status: 'available', outTo: null, outSince: null, dueBack: null, isPastDue: false } : b,
+      ),
+    )
   }
 
   const addBoard = (input: NewBoardInput) => {
@@ -104,6 +124,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const signInAs = (memberName: string) => {
     setCurrentMemberView(memberName)
+    setIsSignedIn(true)
   }
 
   const joinAsMember = (input: JoinInput) => {
@@ -126,6 +147,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setJoinSuccess(newMember)
       return [...prev, newMember]
     })
+    // Creating an account signs you in as that account, same as the demo sign-in form.
+    setCurrentMemberView(input.name)
+    setIsSignedIn(true)
   }
 
   const addReview = (input: NewReviewInput) => {
@@ -159,6 +183,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       rentalPricing: initialRentalPricing,
       currentMemberView,
       joinSuccess,
+      isSignedIn,
       currentMember,
       checkOutBoard,
       checkInBoard,
@@ -170,7 +195,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       addReview,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boards, members, reviews, activity, currentMemberView, joinSuccess, currentMember],
+    [boards, members, reviews, activity, currentMemberView, joinSuccess, isSignedIn, currentMember],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

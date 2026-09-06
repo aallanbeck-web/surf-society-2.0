@@ -10,10 +10,10 @@ export const initialRentalPricing: RentalPricing = { hourly: 15, daily: 45, week
 
 export const initialBoards: Board[] = [
   { id: 1, name: 'Blue Hibiscus', brand: 'Album', type: 'Shortboard', size: "5'10\"", condition: 'Excellent', status: 'available', photo: null, tint: '#3F6B5E' },
-  { id: 2, name: 'Mid Tide', brand: 'CJ Nelson', type: 'Midlength', size: "7'2\"", condition: 'Good', status: 'out', outTo: 'Priya Nair', outSince: 'Today, 9:12 AM', photo: null, tint: '#B8801F' },
+  { id: 2, name: 'Mid Tide', brand: 'CJ Nelson', type: 'Midlength', size: "7'2\"", condition: 'Good', status: 'out', outTo: 'Priya Nair', outSince: 'Today, 9:12 AM', dueBack: 'Today, 6:00 PM', isPastDue: false, photo: null, tint: '#B8801F' },
   { id: 3, name: 'Old Faithful', brand: 'Takayama', type: 'Longboard', size: "9'0\"", condition: 'Good', status: 'available', photo: null, tint: '#1C3B44' },
   { id: 4, name: 'Foam Runner', brand: 'Catch Surf', type: 'Soft-top', size: "6'0\"", condition: 'Fair', status: 'available', photo: null, tint: '#B0432E' },
-  { id: 5, name: 'Twin Fin 68', brand: 'Lost', type: 'Fish', size: "5'8\"", condition: 'Excellent', status: 'out', outTo: 'Marcus Ito', outSince: 'Yesterday, 4:40 PM', photo: null, tint: '#3F6B5E' },
+  { id: 5, name: 'Twin Fin 68', brand: 'Lost', type: 'Fish', size: "5'8\"", condition: 'Excellent', status: 'out', outTo: 'Marcus Ito', outSince: 'Yesterday, 4:40 PM', dueBack: 'Yesterday, 6:00 PM', isPastDue: true, photo: null, tint: '#3F6B5E' },
   { id: 6, name: 'Shores Special', brand: 'Channel Islands', type: 'Shortboard', size: "6'1\"", condition: 'Excellent', status: 'available', photo: null, tint: '#0E2A32' },
 ]
 

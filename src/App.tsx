@@ -4,6 +4,7 @@ import { AppStateProvider } from './state/AppState'
 
 import Home from './pages/customer/Home'
 import Rentals from './pages/customer/Rentals'
+import ReserveBoard from './pages/customer/ReserveBoard'
 import Membership from './pages/customer/Membership'
 import Reviews from './pages/customer/Reviews'
 import Join from './pages/customer/Join'
@@ -23,6 +24,7 @@ function App() {
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="rentals" element={<Rentals />} />
+            <Route path="rentals/reserve/:boardId" element={<ReserveBoard />} />
             <Route path="membership" element={<Membership />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="join" element={<Join />} />

@@ -1,22 +1,31 @@
 import { useMemo, useState } from 'react'
 import { Btn, MiniBtn, Pill, Select, SectionHead } from '../../components/ui'
 import QrCode from '../../components/QrCode'
-import { useAppState } from '../../state/AppState'
+import { isMemberEligible, useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
 
 export default function BoardWall() {
   const { boards, members, activity, checkOutBoard, checkInBoard } = useAppState()
   const [search, setSearch] = useState('')
   const [openCheckoutFor, setOpenCheckoutFor] = useState<number | null>(null)
-  const [checkoutMember, setCheckoutMember] = useState(members[0]?.name ?? '')
   const [showAddMember, setShowAddMember] = useState(false)
   const joinUrl = `${window.location.origin}/join`
+
+  const eligibleMembers = useMemo(() => members.filter(isMemberEligible), [members])
+  const [checkoutMember, setCheckoutMember] = useState(eligibleMembers[0]?.name ?? '')
+
+  const pastDueBoards = useMemo(() => boards.filter((b) => b.status === 'out' && b.isPastDue), [boards])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     if (!q) return boards
     return boards.filter((b) => `${b.name} ${b.brand} ${b.type}`.toLowerCase().includes(q))
   }, [boards, search])
+
+  const openCheckout = (boardId: number) => {
+    setCheckoutMember(eligibleMembers[0]?.name ?? '')
+    setOpenCheckoutFor(boardId)
+  }
 
   const confirmCheckout = (id: number) => {
     checkOutBoard(id, checkoutMember)
@@ -33,6 +42,22 @@ export default function BoardWall() {
           </Btn>
         }
       />
+
+      {pastDueBoards.length > 0 && (
+        <div className="bg-rust/10 border border-rust rounded-xl p-5 mb-7">
+          <h2 className="text-[15px] font-semibold text-rust mb-3">Boards past due ({pastDueBoards.length})</h2>
+          <ul className="list-none p-0 m-0 flex flex-col gap-2">
+            {pastDueBoards.map((b) => (
+              <li key={b.id} className="flex justify-between flex-wrap gap-1 text-[13.5px]">
+                <span>
+                  <b>{b.name}</b> — with {b.outTo}
+                </span>
+                <span className="text-ink-soft">Due back {b.dueBack}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {showAddMember && (
         <div className="bg-card border border-line rounded-[14px] p-6.5 mb-7 flex flex-col md:flex-row gap-6 items-center">
@@ -71,7 +96,7 @@ export default function BoardWall() {
                   {b.status === 'available' ? 'Available' : 'Checked out'}
                 </Pill>
                 {b.status === 'available' ? (
-                  <MiniBtn tone="checkout" onClick={() => setOpenCheckoutFor(b.id)}>
+                  <MiniBtn tone="checkout" onClick={() => openCheckout(b.id)}>
                     Check out
                   </MiniBtn>
                 ) : (
@@ -83,24 +108,31 @@ export default function BoardWall() {
               {b.status === 'out' && (
                 <div className="text-xs text-ink-soft mt-1.5">
                   With {b.outTo} · since {b.outSince}
+                  {b.isPastDue && <span className="text-rust font-semibold"> · past due</span>}
                 </div>
               )}
-              {openCheckoutFor === b.id && (
-                <div className="flex gap-1.5 mt-2.5">
-                  <Select
-                    className="flex-1 px-2 py-1.5 text-[13px]"
-                    value={checkoutMember}
-                    onChange={(e) => setCheckoutMember(e.target.value)}
-                  >
-                    {members.map((m) => (
-                      <option key={m.id}>{m.name}</option>
-                    ))}
-                  </Select>
-                  <MiniBtn tone="checkout" onClick={() => confirmCheckout(b.id)}>
-                    Confirm
-                  </MiniBtn>
-                </div>
-              )}
+              {openCheckoutFor === b.id &&
+                (eligibleMembers.length === 0 ? (
+                  <div className="text-xs text-rust mt-2.5">
+                    No members in good standing to check this board out to — every account is either inactive or
+                    past due.
+                  </div>
+                ) : (
+                  <div className="flex gap-1.5 mt-2.5">
+                    <Select
+                      className="flex-1 px-2 py-1.5 text-[13px]"
+                      value={checkoutMember}
+                      onChange={(e) => setCheckoutMember(e.target.value)}
+                    >
+                      {eligibleMembers.map((m) => (
+                        <option key={m.id}>{m.name}</option>
+                      ))}
+                    </Select>
+                    <MiniBtn tone="checkout" onClick={() => confirmCheckout(b.id)}>
+                      Confirm
+                    </MiniBtn>
+                  </div>
+                ))}
             </div>
           </div>
         ))}
