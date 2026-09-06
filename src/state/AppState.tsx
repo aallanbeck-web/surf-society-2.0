@@ -1,11 +1,12 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { Board, Member, Review, ActivityEntry } from '../lib/types'
-import { addDays } from '../lib/format'
+import type { Board, Member, Review, ActivityEntry, Reservation } from '../lib/types'
+import { addDays, fmtISODate } from '../lib/format'
 import {
   initialBoards,
   initialMembers,
   initialReviews,
   initialActivity,
+  initialReservations,
   initialRentalPricing,
   TIERS,
   JOIN_NEXT_BILLING,
@@ -33,6 +34,18 @@ interface JoinInput {
   tier: string
 }
 
+interface NewReservationInput {
+  boardId: number
+  boardName: string
+  date: string
+  window: string
+}
+
+interface ReservationResult {
+  ok: boolean
+  reason?: string
+}
+
 /** A member is eligible to have a board checked out to them: active membership, payment current. */
 export function isMemberEligible(member: Member): boolean {
   return member.status === 'active' && member.paymentStatus === 'current'
@@ -44,6 +57,7 @@ interface AppStateValue {
   members: Member[]
   reviews: Review[]
   activity: ActivityEntry[]
+  reservations: Reservation[]
   rentalPricing: typeof initialRentalPricing
   currentMemberView: string
   joinSuccess: Member | null
@@ -61,6 +75,7 @@ interface AppStateValue {
   signInAs: (memberName: string) => void
   joinAsMember: (input: JoinInput) => void
   addReview: (input: NewReviewInput) => void
+  createReservation: (input: NewReservationInput) => ReservationResult
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -70,6 +85,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<Member[]>(initialMembers)
   const [reviews, setReviews] = useState<Review[]>(initialReviews)
   const [activity, setActivity] = useState<ActivityEntry[]>(initialActivity)
+  const [reservations, setReservations] = useState<Reservation[]>(initialReservations)
   const [currentMemberView, setCurrentMemberView] = useState('Priya Nair')
   const [joinSuccess, setJoinSuccess] = useState<Member | null>(null)
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -143,6 +159,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         amount: tier.price,
         history: [{ date: 'Aug 30', desc: `${input.tier} membership — signup`, amount: tier.price, status: 'Paid' }],
         rentalHistory: [],
+        daysUsedThisMonth: 0,
       }
       setJoinSuccess(newMember)
       return [...prev, newMember]
@@ -172,6 +189,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const createReservation = (input: NewReservationInput): ReservationResult => {
+    // One reservation per board per date — this is what actually prevents double-booking.
+    const conflict = reservations.find((r) => r.boardId === input.boardId && r.date === input.date)
+    if (conflict) {
+      return {
+        ok: false,
+        reason: `${input.boardName} is already reserved for ${fmtISODate(input.date)} (by ${conflict.memberName}). Pick another date.`,
+      }
+    }
+
+    setReservations((prev) => {
+      const newId = Math.max(0, ...prev.map((r) => r.id)) + 1
+      return [
+        ...prev,
+        { id: newId, boardId: input.boardId, boardName: input.boardName, memberName: currentMemberView, date: input.date, window: input.window },
+      ]
+    })
+    // A confirmed reservation counts as a rental day against the member's monthly allowance.
+    setMembers((prev) =>
+      prev.map((m) => (m.name === currentMemberView ? { ...m, daysUsedThisMonth: m.daysUsedThisMonth + 1 } : m)),
+    )
+    return { ok: true }
+  }
+
   const currentMember = members.find((m) => m.name === currentMemberView) ?? members[0]
 
   const value = useMemo<AppStateValue>(
@@ -180,6 +221,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       members,
       reviews,
       activity,
+      reservations,
       rentalPricing: initialRentalPricing,
       currentMemberView,
       joinSuccess,
@@ -193,9 +235,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       signInAs,
       joinAsMember,
       addReview,
+      createReservation,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boards, members, reviews, activity, currentMemberView, joinSuccess, isSignedIn, currentMember],
+    [boards, members, reviews, activity, reservations, currentMemberView, joinSuccess, isSignedIn, currentMember],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

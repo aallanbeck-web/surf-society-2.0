@@ -3,9 +3,10 @@ import { Btn, MiniBtn, Pill, Select, SectionHead } from '../../components/ui'
 import QrCode from '../../components/QrCode'
 import { isMemberEligible, useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
+import { fmtISODate, todayISO } from '../../lib/format'
 
 export default function BoardWall() {
-  const { boards, members, activity, checkOutBoard, checkInBoard } = useAppState()
+  const { boards, members, activity, reservations, checkOutBoard, checkInBoard } = useAppState()
   const [search, setSearch] = useState('')
   const [openCheckoutFor, setOpenCheckoutFor] = useState<number | null>(null)
   const [showAddMember, setShowAddMember] = useState(false)
@@ -15,6 +16,19 @@ export default function BoardWall() {
   const [checkoutMember, setCheckoutMember] = useState(eligibleMembers[0]?.name ?? '')
 
   const pastDueBoards = useMemo(() => boards.filter((b) => b.status === 'out' && b.isPastDue), [boards])
+
+  const upcomingReservationsByBoard = useMemo(() => {
+    const today = todayISO()
+    const map = new Map<number, typeof reservations>()
+    for (const r of reservations) {
+      if (r.date < today) continue
+      const list = map.get(r.boardId) ?? []
+      list.push(r)
+      map.set(r.boardId, list)
+    }
+    for (const list of map.values()) list.sort((a, b) => a.date.localeCompare(b.date))
+    return map
+  }, [reservations])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -109,6 +123,14 @@ export default function BoardWall() {
                 <div className="text-xs text-ink-soft mt-1.5">
                   With {b.outTo} · since {b.outSince}
                   {b.isPastDue && <span className="text-rust font-semibold"> · past due</span>}
+                </div>
+              )}
+              {(upcomingReservationsByBoard.get(b.id)?.length ?? 0) > 0 && (
+                <div className="text-xs text-gold-deep mt-1.5">
+                  Reserved: {upcomingReservationsByBoard
+                    .get(b.id)!
+                    .map((r) => `${fmtISODate(r.date)} (${r.memberName})`)
+                    .join(', ')}
                 </div>
               )}
               {openCheckoutFor === b.id &&

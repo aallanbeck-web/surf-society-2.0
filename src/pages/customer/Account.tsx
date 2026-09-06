@@ -1,16 +1,38 @@
+import { useNavigate } from 'react-router-dom'
 import { Banner, Btn, DataTable, Pill, SectionHead } from '../../components/ui'
 import RentalHistoryTable from '../../components/RentalHistoryTable'
 import { useAppState } from '../../state/AppState'
-import { fmt } from '../../lib/format'
+import { fmt, fmtISODate, todayISO } from '../../lib/format'
+import { getDaysRemaining, getIncludedDays, getNextTier, isNearingDayLimit } from '../../lib/membership'
 
 export default function Account() {
-  const { currentMember: m } = useAppState()
+  const navigate = useNavigate()
+  const { currentMember: m, reservations } = useAppState()
+
+  const included = getIncludedDays(m.tier)
+  const remaining = getDaysRemaining(m)
+  const nextTier = getNextTier(m.tier)
+  const nearingLimit = isNearingDayLimit(m)
+
+  const upcomingReservations = reservations
+    .filter((r) => r.memberName === m.name && r.date >= todayISO())
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   return (
     <>
       <SectionHead title="My Account" />
       {m.paymentStatus === 'past_due' && (
         <Banner tone="bad">Payment past due — update your payment method to keep booking privileges.</Banner>
+      )}
+      {nearingLimit && nextTier && (
+        <Banner tone="info">
+          <span>
+            You've used {m.daysUsedThisMonth} of {included} rental days included with {m.tier} this month.
+          </span>
+          <Btn variant="gold" onClick={() => navigate('/membership')}>
+            Upgrade to {nextTier.name}
+          </Btn>
+        </Banner>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr] gap-5 mb-7">
         <div className="bg-card border border-line rounded-xl p-6">
@@ -32,6 +54,10 @@ export default function Account() {
           </div>
           <div className="mt-1 text-[13.5px] text-ink-soft">
             Payment method: <b className="text-ink">Visa •••• 4417</b>
+          </div>
+          <div className="mt-1 text-[13.5px] text-ink-soft">
+            Rental days this month:{' '}
+            <b className="text-ink">{included === null ? 'Unlimited' : `${remaining} of ${included} left`}</b>
           </div>
           <Btn variant="ghost" className="mt-4.5">
             Update payment method
@@ -68,6 +94,36 @@ export default function Account() {
           </table>
         </DataTable>
       </div>
+
+      <SectionHead title="Upcoming reservations" size="sm" />
+      {upcomingReservations.length === 0 ? (
+        <p className="text-ink-soft text-[13.5px] mb-7">No upcoming reservations.</p>
+      ) : (
+        <div className="mb-7">
+          <DataTable>
+            <table>
+              <thead>
+                <tr>
+                  {['Board', 'Date', 'Pickup window'].map((h) => (
+                    <th key={h} className="text-left text-[11.5px] text-ink-soft px-4 py-3 border-b border-line font-semibold bg-paper-dim">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {upcomingReservations.map((r) => (
+                  <tr key={r.id}>
+                    <td className="px-4 py-3 border-b border-line text-[13.5px]">{r.boardName}</td>
+                    <td className="px-4 py-3 border-b border-line text-[13.5px]">{fmtISODate(r.date)}</td>
+                    <td className="px-4 py-3 border-b border-line text-[13.5px]">{r.window}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTable>
+        </div>
+      )}
 
       <SectionHead title="Rental history" size="sm" />
       <RentalHistoryTable entries={m.rentalHistory} />

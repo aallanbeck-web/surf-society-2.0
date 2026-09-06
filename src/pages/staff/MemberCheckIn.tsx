@@ -4,6 +4,7 @@ import { Banner, Btn, Pill, SectionHead } from '../../components/ui'
 import RentalHistoryTable from '../../components/RentalHistoryTable'
 import { useAppState } from '../../state/AppState'
 import { fmt } from '../../lib/format'
+import { getDaysRemaining, getIncludedDays, isNearingDayLimit } from '../../lib/membership'
 
 export default function MemberCheckIn() {
   const { members } = useAppState()
@@ -68,6 +69,17 @@ export default function MemberCheckIn() {
               </div>
               <div className="mt-1 text-[13.5px] text-ink-soft">
                 Next billing: <b className="text-ink">{fmt(match.nextBilling)}</b>
+              </div>
+              <div className="mt-1 text-[13.5px] text-ink-soft">
+                Rental days this month:{' '}
+                <b className="text-ink">
+                  {getIncludedDays(match.tier) === null
+                    ? 'Unlimited'
+                    : `${getDaysRemaining(match)} of ${getIncludedDays(match.tier)} left`}
+                </b>
+                {isNearingDayLimit(match) && (
+                  <span className="text-gold-deep"> — nearing limit, consider suggesting an upgrade</span>
+                )}
               </div>
               {goodStanding && (
                 <Btn variant="primary" className="mt-4" onClick={() => navigate('/staff/board-wall')}>

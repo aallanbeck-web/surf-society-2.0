@@ -1,5 +1,12 @@
 import { addDays } from './format'
-import type { Board, Member, Review, ActivityEntry, Tier, Slide, RentalPricing } from './types'
+import type { Board, Member, Review, ActivityEntry, Tier, Slide, RentalPricing, Reservation } from './types'
+
+/** `YYYY-MM-DD` N days from whenever the app loads — keeps seeded reservations "upcoming" forever. */
+function isoDaysFromNow(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
 
 /**
  * All mock data below is in-memory only and resets on page refresh.
@@ -29,6 +36,8 @@ export const initialMembers: Member[] = [
       { board: 'Old Faithful', checkedOut: 'Aug 21', returned: 'Aug 23' },
       { board: 'Blue Hibiscus', checkedOut: 'Aug 9', returned: 'Aug 9' },
     ],
+    // Local includes 6 days/month — 5 used demonstrates the "almost out, upgrade?" prompt.
+    daysUsedThisMonth: 5,
   },
   {
     id: 2, name: 'Marcus Ito', email: 'marcus@example.com', tier: 'Society', status: 'active', paymentStatus: 'current', joined: 'Nov 2024', nextBilling: new Date(2026, 8, 11), amount: 249,
@@ -41,11 +50,15 @@ export const initialMembers: Member[] = [
       { board: 'Shores Special', checkedOut: 'Aug 18', returned: 'Aug 19' },
       { board: 'Foam Runner', checkedOut: 'Aug 5', returned: 'Aug 5' },
     ],
+    // Society is unlimited — this number is informational only, never gates anything.
+    daysUsedThisMonth: 14,
   },
   {
     id: 3, name: 'Dana Whitfield', email: 'dana@example.com', tier: 'Swell', status: 'inactive', paymentStatus: 'past_due', joined: 'May 2025', nextBilling: new Date(2026, 5, 2), amount: 59,
     history: [{ date: 'Jun 2', desc: 'Swell membership — monthly', amount: 59, status: 'Paid' }],
     rentalHistory: [{ board: 'Foam Runner', checkedOut: 'May 30', returned: 'Jun 1' }],
+    // Swell includes 2 days/month — fully used, another upgrade-prompt example.
+    daysUsedThisMonth: 2,
   },
   {
     id: 4, name: 'Ollie Reyes', email: 'ollie@example.com', tier: 'Local', status: 'active', paymentStatus: 'past_due', joined: 'Jan 2025', nextBilling: new Date(2026, 8, 2), amount: 129,
@@ -54,7 +67,13 @@ export const initialMembers: Member[] = [
       { board: 'Old Faithful', checkedOut: 'Yesterday, 1:05 PM', returned: 'Yesterday, 1:05 PM' },
       { board: 'Old Faithful', checkedOut: 'Aug 14', returned: 'Aug 16' },
     ],
+    daysUsedThisMonth: 3,
   },
+]
+
+export const initialReservations: Reservation[] = [
+  { id: 1, boardId: 3, boardName: 'Old Faithful', memberName: 'Priya Nair', date: isoDaysFromNow(4), window: '8:00 – 10:00 AM' },
+  { id: 2, boardId: 6, boardName: 'Shores Special', memberName: 'Marcus Ito', date: isoDaysFromNow(6), window: '12:00 – 2:00 PM' },
 ]
 
 export const initialReviews: Review[] = [
@@ -78,15 +97,15 @@ export const SLIDES: Slide[] = [
 
 export const TIERS: Tier[] = [
   {
-    name: 'Swell', price: 59, desc: 'For the occasional dawn patrol.', featured: false,
+    name: 'Swell', price: 59, desc: 'For the occasional dawn patrol.', featured: false, includedDaysPerMonth: 2,
     perks: ['2 rental days included / month', '15% off additional rental days', 'Standard quiver access', 'Book online, no wait list'],
   },
   {
-    name: 'Local', price: 129, desc: 'For people who surf most weeks.', featured: true,
+    name: 'Local', price: 129, desc: 'For people who surf most weeks.', featured: true, includedDaysPerMonth: 6,
     perks: ['6 rental days included / month', 'Priority pickup windows', 'Full quiver, including longboards', '1 guest pass / month'],
   },
   {
-    name: 'Society', price: 249, desc: 'For the board-a-day crowd.', featured: false,
+    name: 'Society', price: 249, desc: 'For the board-a-day crowd.', featured: false, includedDaysPerMonth: null,
     perks: ['Unlimited rental days', 'First pick of new boards', '3 guest passes / month', 'Free wax, traction pad & storage locker'],
   },
 ]

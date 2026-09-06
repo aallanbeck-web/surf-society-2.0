@@ -45,9 +45,18 @@ export function Panel({ children, className = '' }: { children: ReactNode; class
   return <div className={`bg-card border border-line rounded-xl p-6 mb-7 ${className}`}>{children}</div>
 }
 
-export function Banner({ tone, children }: { tone: 'good' | 'bad'; children: ReactNode }) {
-  const toneClass = tone === 'good' ? 'bg-kelp/[0.12] text-kelp-deep' : 'bg-rust/10 text-rust'
-  return <div className={`rounded-[10px] px-[18px] py-3.5 text-[13.5px] font-medium mb-5 flex items-center gap-2.5 ${toneClass}`}>{children}</div>
+const BANNER_STYLES = {
+  good: 'bg-kelp/[0.12] text-kelp-deep',
+  bad: 'bg-rust/10 text-rust',
+  info: 'bg-gold/[0.14] text-gold-deep',
+}
+
+export function Banner({ tone, children }: { tone: 'good' | 'bad' | 'info'; children: ReactNode }) {
+  return (
+    <div className={`rounded-[10px] px-[18px] py-3.5 text-[13.5px] font-medium mb-5 flex items-center gap-3 flex-wrap ${BANNER_STYLES[tone]}`}>
+      {children}
+    </div>
+  )
 }
 
 export function DataTable({ children }: { children: ReactNode }) {

@@ -46,6 +46,8 @@ export interface Member {
   amount: number
   history: BillingHistoryEntry[]
   rentalHistory: RentalHistoryEntry[]
+  /** Rental days used against this month's included allowance (resets each billing cycle). */
+  daysUsedThisMonth: number
 }
 
 export interface Review {
@@ -70,6 +72,8 @@ export interface Tier {
   desc: string
   featured: boolean
   perks: string[]
+  /** Rental days included per month, or null for unlimited (Society tier). */
+  includedDaysPerMonth: number | null
 }
 
 export interface Slide {
@@ -82,4 +86,15 @@ export interface RentalPricing {
   hourly: number
   daily: number
   weekly: number
+}
+
+export interface Reservation {
+  id: number
+  boardId: number
+  boardName: string
+  memberName: string
+  /** `YYYY-MM-DD`, matches `<input type="date">` values — one reservation per board per date. */
+  date: string
+  /** e.g. "8:00 – 10:00 AM" */
+  window: string
 }

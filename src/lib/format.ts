@@ -8,6 +8,16 @@ export function fmt(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+/** Today's date as a local `YYYY-MM-DD` string — matches `<input type="date">` values. */
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Formats a `YYYY-MM-DD` string as e.g. "Sep 10" for display. */
+export function fmtISODate(iso: string): string {
+  return fmt(new Date(`${iso}T00:00:00`))
+}
+
 /**
  * Parses a board size like `5'10"` or `9'0"` into total inches, for sorting.
  * Returns 0 for anything that doesn't match (keeps sort stable rather than throwing).

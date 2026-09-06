@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Btn, Field, Panel, Pill, SectionHead, Select, TextInput } from '../../components/ui'
+import { Banner, Btn, Field, Panel, Pill, SectionHead, Select, TextInput } from '../../components/ui'
 import { useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
+import { fmtISODate, todayISO } from '../../lib/format'
 
 const PICKUP_WINDOWS = [
   '8:00 – 10:00 AM',
@@ -12,20 +13,25 @@ const PICKUP_WINDOWS = [
   '4:00 – 6:00 PM',
 ]
 
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function ReserveBoard() {
   const { boardId } = useParams()
   const navigate = useNavigate()
-  const { boards, members, isSignedIn, currentMemberView, signInAs } = useAppState()
+  const { boards, members, reservations, isSignedIn, currentMemberView, signInAs, createReservation } = useAppState()
   const board = boards.find((b) => b.id === Number(boardId))
 
   const [acct, setAcct] = useState(members[0]?.name ?? '')
   const [date, setDate] = useState(todayISO())
   const [window, setWindow] = useState(PICKUP_WINDOWS[0])
   const [confirmed, setConfirmed] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const upcomingReservations = useMemo(
+    () =>
+      board
+        ? reservations.filter((r) => r.boardId === board.id && r.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date))
+        : [],
+    [reservations, board],
+  )
 
   if (!board) {
     return (
@@ -123,6 +129,12 @@ export default function ReserveBoard() {
 
   const handleConfirm = (e: React.FormEvent) => {
     e.preventDefault()
+    const result = createReservation({ boardId: board.id, boardName: board.name, date, window })
+    if (!result.ok) {
+      setError(result.reason ?? 'That date is unavailable for this board.')
+      return
+    }
+    setError(null)
     setConfirmed(true)
   }
 
@@ -136,9 +148,25 @@ export default function ReserveBoard() {
           Signed in as <b className="text-ink">{currentMemberView}</b>. Pickup windows are 2 hours, during business
           hours.
         </p>
+        {upcomingReservations.length > 0 && (
+          <p className="text-ink-soft text-[13px] mt-3">
+            Already reserved: {upcomingReservations.map((r) => fmtISODate(r.date)).join(', ')} — this board can only
+            be booked once per day.
+          </p>
+        )}
+        {error && <Banner tone="bad">{error}</Banner>}
         <form onSubmit={handleConfirm}>
           <Field label="Pickup date">
-            <TextInput type="date" min={todayISO()} required value={date} onChange={(e) => setDate(e.target.value)} />
+            <TextInput
+              type="date"
+              min={todayISO()}
+              required
+              value={date}
+              onChange={(e) => {
+                setError(null)
+                setDate(e.target.value)
+              }}
+            />
           </Field>
           <Field label="Pickup window">
             <Select value={window} onChange={(e) => setWindow(e.target.value)}>
