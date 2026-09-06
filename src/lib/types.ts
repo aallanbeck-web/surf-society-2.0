@@ -24,6 +24,12 @@ export interface BillingHistoryEntry {
   status: string
 }
 
+export interface RentalHistoryEntry {
+  board: string
+  checkedOut: string
+  returned: string
+}
+
 export interface Member {
   id: number
   name: string
@@ -35,6 +41,7 @@ export interface Member {
   nextBilling: Date
   amount: number
   history: BillingHistoryEntry[]
+  rentalHistory: RentalHistoryEntry[]
 }
 
 export interface Review {

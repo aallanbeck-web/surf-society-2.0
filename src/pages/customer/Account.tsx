@@ -1,4 +1,5 @@
 import { Banner, Btn, DataTable, Pill, SectionHead } from '../../components/ui'
+import RentalHistoryTable from '../../components/RentalHistoryTable'
 import { useAppState } from '../../state/AppState'
 import { fmt } from '../../lib/format'
 
@@ -69,40 +70,7 @@ export default function Account() {
       </div>
 
       <SectionHead title="Rental history" size="sm" />
-      <DataTable>
-        <table>
-          <thead>
-            <tr>
-              <th className="text-left text-[11.5px] text-ink-soft px-4 py-3 border-b border-line font-semibold bg-paper-dim">
-                Board
-              </th>
-              <th className="text-left text-[11.5px] text-ink-soft px-4 py-3 border-b border-line font-semibold bg-paper-dim">
-                Checked out
-              </th>
-              <th className="text-left text-[11.5px] text-ink-soft px-4 py-3 border-b border-line font-semibold bg-paper-dim">
-                Returned
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">Mid Tide</td>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">Today, 9:12 AM</td>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">—</td>
-            </tr>
-            <tr>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">Old Faithful</td>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">Aug 21</td>
-              <td className="px-4 py-3 border-b border-line text-[13.5px]">Aug 23</td>
-            </tr>
-            <tr>
-              <td className="px-4 py-3 text-[13.5px]">Blue Hibiscus</td>
-              <td className="px-4 py-3 text-[13.5px]">Aug 9</td>
-              <td className="px-4 py-3 text-[13.5px]">Aug 9</td>
-            </tr>
-          </tbody>
-        </table>
-      </DataTable>
+      <RentalHistoryTable entries={m.rentalHistory} />
     </>
   )
 }

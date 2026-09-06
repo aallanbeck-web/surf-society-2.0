@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { MiniBtn, Pill, Select, SectionHead } from '../../components/ui'
+import { Btn, MiniBtn, Pill, Select, SectionHead } from '../../components/ui'
+import QrCode from '../../components/QrCode'
 import { useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
 
@@ -8,6 +9,8 @@ export default function BoardWall() {
   const [search, setSearch] = useState('')
   const [openCheckoutFor, setOpenCheckoutFor] = useState<number | null>(null)
   const [checkoutMember, setCheckoutMember] = useState(members[0]?.name ?? '')
+  const [showAddMember, setShowAddMember] = useState(false)
+  const joinUrl = `${window.location.origin}/join`
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -22,7 +25,28 @@ export default function BoardWall() {
 
   return (
     <>
-      <SectionHead title="Board Wall" />
+      <SectionHead
+        title="Board Wall"
+        action={
+          <Btn variant="primary" onClick={() => setShowAddMember((v) => !v)}>
+            {showAddMember ? 'Cancel' : '+ Add member'}
+          </Btn>
+        }
+      />
+
+      {showAddMember && (
+        <div className="bg-card border border-line rounded-[14px] p-6.5 mb-7 flex flex-col md:flex-row gap-6 items-center">
+          <QrCode data={joinUrl} />
+          <div>
+            <h2 className="text-[16px]">Have the customer scan this code</h2>
+            <p className="text-ink-soft text-[13.5px] mt-1.5 max-w-[440px]">
+              It opens the membership application on their phone so they can sign up on the spot — pick a
+              tier, enter their info, and they're a member before they leave the counter.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2.5 mb-5 flex-wrap items-center">
         <input
           className="px-3.5 py-2.5 border border-line-strong rounded-lg bg-card min-w-[220px] focus:outline focus:outline-2 focus:outline-kelp focus:outline-offset-1"

@@ -16,8 +16,8 @@ const ROLE_HOME: Record<Role, string> = {
 
 const CUSTOMER_TABS = [
   ['/', 'Home'],
-  ['/rentals', 'Daily Rentals'],
   ['/membership', 'Membership'],
+  ['/rentals', 'Daily Rentals'],
   ['/reviews', 'Reviews'],
   ['/join', 'Join'],
   ['/account', 'My Account'],

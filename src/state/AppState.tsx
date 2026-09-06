@@ -121,6 +121,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         nextBilling: JOIN_NEXT_BILLING,
         amount: tier.price,
         history: [{ date: 'Aug 30', desc: `${input.tier} membership — signup`, amount: tier.price, status: 'Paid' }],
+        rentalHistory: [],
       }
       setJoinSuccess(newMember)
       return [...prev, newMember]

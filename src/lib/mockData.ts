@@ -24,6 +24,11 @@ export const initialMembers: Member[] = [
       { date: 'Aug 4', desc: 'Local membership — monthly', amount: 129, status: 'Paid' },
       { date: 'Jul 4', desc: 'Local membership — monthly', amount: 129, status: 'Paid' },
     ],
+    rentalHistory: [
+      { board: 'Mid Tide', checkedOut: 'Today, 9:12 AM', returned: '—' },
+      { board: 'Old Faithful', checkedOut: 'Aug 21', returned: 'Aug 23' },
+      { board: 'Blue Hibiscus', checkedOut: 'Aug 9', returned: 'Aug 9' },
+    ],
   },
   {
     id: 2, name: 'Marcus Ito', email: 'marcus@example.com', tier: 'Society', status: 'active', paymentStatus: 'current', joined: 'Nov 2024', nextBilling: new Date(2026, 8, 11), amount: 249,
@@ -31,14 +36,24 @@ export const initialMembers: Member[] = [
       { date: 'Aug 11', desc: 'Society membership — monthly', amount: 249, status: 'Paid' },
       { date: 'Aug 2', desc: 'Guest pass add-on', amount: 20, status: 'Paid' },
     ],
+    rentalHistory: [
+      { board: 'Twin Fin 68', checkedOut: 'Yesterday, 4:40 PM', returned: '—' },
+      { board: 'Shores Special', checkedOut: 'Aug 18', returned: 'Aug 19' },
+      { board: 'Foam Runner', checkedOut: 'Aug 5', returned: 'Aug 5' },
+    ],
   },
   {
     id: 3, name: 'Dana Whitfield', email: 'dana@example.com', tier: 'Swell', status: 'inactive', paymentStatus: 'past_due', joined: 'May 2025', nextBilling: new Date(2026, 5, 2), amount: 59,
     history: [{ date: 'Jun 2', desc: 'Swell membership — monthly', amount: 59, status: 'Paid' }],
+    rentalHistory: [{ board: 'Foam Runner', checkedOut: 'May 30', returned: 'Jun 1' }],
   },
   {
     id: 4, name: 'Ollie Reyes', email: 'ollie@example.com', tier: 'Local', status: 'active', paymentStatus: 'past_due', joined: 'Jan 2025', nextBilling: new Date(2026, 8, 2), amount: 129,
     history: [{ date: 'Aug 2', desc: 'Local membership — monthly', amount: 129, status: 'Failed' }],
+    rentalHistory: [
+      { board: 'Old Faithful', checkedOut: 'Yesterday, 1:05 PM', returned: 'Yesterday, 1:05 PM' },
+      { board: 'Old Faithful', checkedOut: 'Aug 14', returned: 'Aug 16' },
+    ],
   },
 ]
 
