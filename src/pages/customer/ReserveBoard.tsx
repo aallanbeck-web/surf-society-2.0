@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Banner, Btn, Field, Panel, Pill, SectionHead, Select, TextInput } from '../../components/ui'
-import { useAppState } from '../../state/AppState'
+import { hasOverdueBoard, useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
 import { fmtISODate, todayISO } from '../../lib/format'
 
@@ -104,6 +104,21 @@ export default function ReserveBoard() {
             </Btn>
           </Panel>
         </div>
+      </>
+    )
+  }
+
+  if (hasOverdueBoard(currentMemberView, boards)) {
+    return (
+      <>
+        <SectionHead title="Reserve a Board" />
+        {boardSummary}
+        <Banner tone="bad">
+          You have an overdue board on your account — please return it before reserving another.
+        </Banner>
+        <Btn variant="primary" onClick={() => navigate('/account')}>
+          Go to My Account
+        </Btn>
       </>
     )
   }

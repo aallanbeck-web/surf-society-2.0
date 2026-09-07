@@ -16,17 +16,20 @@ function isoDaysFromNow(days: number): string {
 export const initialRentalPricing: RentalPricing = { hourly: 15, daily: 45, weekly: 180 }
 
 export const initialBoards: Board[] = [
-  { id: 1, name: 'Blue Hibiscus', brand: 'Album', type: 'Shortboard', size: "5'10\"", condition: 'Excellent', status: 'available', photo: null, tint: '#3F6B5E' },
-  { id: 2, name: 'Mid Tide', brand: 'CJ Nelson', type: 'Midlength', size: "7'2\"", condition: 'Good', status: 'out', outTo: 'Priya Nair', outSince: 'Today, 9:12 AM', dueBack: 'Today, 6:00 PM', isPastDue: false, photo: null, tint: '#B8801F' },
-  { id: 3, name: 'Old Faithful', brand: 'Takayama', type: 'Longboard', size: "9'0\"", condition: 'Good', status: 'available', photo: null, tint: '#1C3B44' },
-  { id: 4, name: 'Foam Runner', brand: 'Catch Surf', type: 'Soft-top', size: "6'0\"", condition: 'Fair', status: 'available', photo: null, tint: '#B0432E' },
-  { id: 5, name: 'Twin Fin 68', brand: 'Lost', type: 'Fish', size: "5'8\"", condition: 'Excellent', status: 'out', outTo: 'Marcus Ito', outSince: 'Yesterday, 4:40 PM', dueBack: 'Yesterday, 6:00 PM', isPastDue: true, photo: null, tint: '#3F6B5E' },
-  { id: 6, name: 'Shores Special', brand: 'Channel Islands', type: 'Shortboard', size: "6'1\"", condition: 'Excellent', status: 'available', photo: null, tint: '#0E2A32' },
+  { id: 1, name: 'Blue Hibiscus', brand: 'Album', type: 'Shortboard', size: "5'10\"", condition: 'Excellent', status: 'available', photo: null, tint: '#3F6B5E', staffNotes: [] },
+  { id: 2, name: 'Mid Tide', brand: 'CJ Nelson', type: 'Midlength', size: "7'2\"", condition: 'Good', status: 'out', outTo: 'Priya Nair', outSince: 'Today, 9:12 AM', dueBack: 'Today, 6:00 PM', isPastDue: false, photo: null, tint: '#B8801F', staffNotes: [] },
+  { id: 3, name: 'Old Faithful', brand: 'Takayama', type: 'Longboard', size: "9'0\"", condition: 'Good', status: 'available', photo: null, tint: '#1C3B44', staffNotes: [] },
+  { id: 4, name: 'Foam Runner', brand: 'Catch Surf', type: 'Soft-top', size: "6'0\"", condition: 'Fair', status: 'available', photo: null, tint: '#B0432E', staffNotes: [] },
+  {
+    id: 5, name: 'Twin Fin 68', brand: 'Lost', type: 'Fish', size: "5'8\"", condition: 'Excellent', status: 'out', outTo: 'Marcus Ito', outSince: 'Yesterday, 4:40 PM', dueBack: 'Yesterday, 6:00 PM', isPastDue: true, photo: null, tint: '#3F6B5E',
+    staffNotes: [{ id: 1, text: 'Small ding on the rail near the tail — watching for water intrusion, not urgent yet.', date: 'Aug 28' }],
+  },
+  { id: 6, name: 'Shores Special', brand: 'Channel Islands', type: 'Shortboard', size: "6'1\"", condition: 'Excellent', status: 'available', photo: null, tint: '#0E2A32', staffNotes: [] },
 ]
 
 export const initialMembers: Member[] = [
   {
-    id: 1, name: 'Priya Nair', email: 'priya@example.com', tier: 'Local', status: 'active', paymentStatus: 'current', joined: 'Feb 2025', nextBilling: new Date(2026, 8, 4), amount: 129,
+    id: 1, name: 'Priya Nair', email: 'priya@example.com', phone: '(858) 555-0142', tier: 'Local', status: 'active', paymentStatus: 'current', joined: 'Feb 2025', nextBilling: new Date(2026, 8, 4), amount: 129,
     history: [
       { date: 'Aug 4', desc: 'Local membership — monthly', amount: 129, status: 'Paid' },
       { date: 'Jul 4', desc: 'Local membership — monthly', amount: 129, status: 'Paid' },
@@ -38,9 +41,10 @@ export const initialMembers: Member[] = [
     ],
     // Local includes 6 days/month — 5 used demonstrates the "almost out, upgrade?" prompt.
     daysUsedThisMonth: 5,
+    staffNotes: [{ id: 1, text: 'Asked about longboard options for a friend visiting in September.', date: 'Aug 20' }],
   },
   {
-    id: 2, name: 'Marcus Ito', email: 'marcus@example.com', tier: 'Society', status: 'active', paymentStatus: 'current', joined: 'Nov 2024', nextBilling: new Date(2026, 8, 11), amount: 249,
+    id: 2, name: 'Marcus Ito', email: 'marcus@example.com', phone: '(858) 555-0187', tier: 'Society', status: 'active', paymentStatus: 'current', joined: 'Nov 2024', nextBilling: new Date(2026, 8, 11), amount: 249,
     history: [
       { date: 'Aug 11', desc: 'Society membership — monthly', amount: 249, status: 'Paid' },
       { date: 'Aug 2', desc: 'Guest pass add-on', amount: 20, status: 'Paid' },
@@ -52,22 +56,25 @@ export const initialMembers: Member[] = [
     ],
     // Society is unlimited — this number is informational only, never gates anything.
     daysUsedThisMonth: 14,
+    staffNotes: [],
   },
   {
-    id: 3, name: 'Dana Whitfield', email: 'dana@example.com', tier: 'Swell', status: 'inactive', paymentStatus: 'past_due', joined: 'May 2025', nextBilling: new Date(2026, 5, 2), amount: 59,
+    id: 3, name: 'Dana Whitfield', email: 'dana@example.com', phone: '(858) 555-0119', tier: 'Swell', status: 'inactive', paymentStatus: 'past_due', joined: 'May 2025', nextBilling: new Date(2026, 5, 2), amount: 59,
     history: [{ date: 'Jun 2', desc: 'Swell membership — monthly', amount: 59, status: 'Paid' }],
     rentalHistory: [{ board: 'Foam Runner', checkedOut: 'May 30', returned: 'Jun 1' }],
     // Swell includes 2 days/month — fully used, another upgrade-prompt example.
     daysUsedThisMonth: 2,
+    staffNotes: [],
   },
   {
-    id: 4, name: 'Ollie Reyes', email: 'ollie@example.com', tier: 'Local', status: 'active', paymentStatus: 'past_due', joined: 'Jan 2025', nextBilling: new Date(2026, 8, 2), amount: 129,
+    id: 4, name: 'Ollie Reyes', email: 'ollie@example.com', phone: '(858) 555-0163', tier: 'Local', status: 'active', paymentStatus: 'past_due', joined: 'Jan 2025', nextBilling: new Date(2026, 8, 2), amount: 129,
     history: [{ date: 'Aug 2', desc: 'Local membership — monthly', amount: 129, status: 'Failed' }],
     rentalHistory: [
       { board: 'Old Faithful', checkedOut: 'Yesterday, 1:05 PM', returned: 'Yesterday, 1:05 PM' },
       { board: 'Old Faithful', checkedOut: 'Aug 14', returned: 'Aug 16' },
     ],
     daysUsedThisMonth: 3,
+    staffNotes: [],
   },
 ]
 

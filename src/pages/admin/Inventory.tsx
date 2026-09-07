@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { Btn, DataTable, Field, Panel, Pill, Select, StatCard, StatStrip, SectionHead, TextInput } from '../../components/ui'
+import { Fragment, useState } from 'react'
+import { Btn, DataTable, Field, MiniBtn, Panel, Pill, Select, StatCard, StatStrip, SectionHead, TextInput } from '../../components/ui'
+import NotesPanel from '../../components/NotesPanel'
 import { useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
 
 export default function Inventory() {
-  const { boards, addBoard } = useAppState()
+  const { boards, addBoard, addBoardNote } = useAppState()
   const [showAddBoard, setShowAddBoard] = useState(false)
   const [name, setName] = useState('')
   const [brand, setBrand] = useState('')
@@ -12,6 +13,7 @@ export default function Inventory() {
   const [size, setSize] = useState('')
   const [condition, setCondition] = useState('Excellent')
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null)
+  const [notesForBoard, setNotesForBoard] = useState<number | null>(null)
 
   const checkedOut = boards.filter((b) => b.status === 'out').length
   const boardTypes = new Set(boards.map((b) => b.type)).size
@@ -110,7 +112,7 @@ export default function Inventory() {
         <table>
           <thead>
             <tr>
-              {['', 'Name', 'Brand', 'Type', 'Size', 'Condition', 'Status'].map((h) => (
+              {['', 'Name', 'Brand', 'Type', 'Size', 'Condition', 'Status', 'Notes'].map((h) => (
                 <th key={h} className="text-left text-[11.5px] text-ink-soft px-4 py-3 border-b border-line font-semibold bg-paper-dim">
                   {h}
                 </th>
@@ -119,21 +121,39 @@ export default function Inventory() {
           </thead>
           <tbody>
             {boards.map((b) => (
-              <tr key={b.id}>
-                <td className="px-4 py-3 border-b border-line last:border-0">
-                  <img src={b.photo || svgBoard(b.tint)} className="w-10 h-8 object-cover rounded" />
-                </td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.name}</td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.brand}</td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.type}</td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.size}</td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.condition}</td>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">
-                  <Pill variant={b.status === 'available' ? 'available' : 'out'}>
-                    {b.status === 'available' ? 'Available' : 'Checked out'}
-                  </Pill>
-                </td>
-              </tr>
+              <Fragment key={b.id}>
+                <tr>
+                  <td className="px-4 py-3 border-b border-line">
+                    <img src={b.photo || svgBoard(b.tint)} className="w-10 h-8 object-cover rounded" />
+                  </td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.name}</td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.brand}</td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.type}</td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.size}</td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">{b.condition}</td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">
+                    <Pill variant={b.status === 'available' ? 'available' : 'out'}>
+                      {b.status === 'available' ? 'Available' : 'Checked out'}
+                    </Pill>
+                  </td>
+                  <td className="px-4 py-3 border-b border-line text-[13.5px]">
+                    <MiniBtn onClick={() => setNotesForBoard(notesForBoard === b.id ? null : b.id)}>
+                      Notes ({b.staffNotes.length})
+                    </MiniBtn>
+                  </td>
+                </tr>
+                {notesForBoard === b.id && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-4 border-b border-line bg-paper-dim">
+                      <NotesPanel
+                        notes={b.staffNotes}
+                        onAdd={(text) => addBoardNote(b.id, text)}
+                        placeholder="Note condition or damage..."
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>

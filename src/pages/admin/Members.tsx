@@ -1,21 +1,28 @@
 import { useMemo, useState } from 'react'
 import { DataTable, MiniBtn, Pill, StatCard, StatStrip, SectionHead } from '../../components/ui'
-import { useAppState } from '../../state/AppState'
+import ContactClientPanel from '../../components/ContactClientPanel'
+import { hasOverdueBoard, useAppState } from '../../state/AppState'
 import { fmt } from '../../lib/format'
 
 export default function Members() {
-  const { members, toggleMemberStatus, extendMemberBilling } = useAppState()
+  const { members, boards, messageLog, toggleMemberStatus, extendMemberBilling } = useAppState()
   const [search, setSearch] = useState('')
+  const [messagingId, setMessagingId] = useState<number | null>(null)
 
-  const active = members.filter((m) => m.status === 'active')
-  const pastDue = members.filter((m) => m.paymentStatus === 'past_due')
+  // Daily (non-membership, pay-per-rental) accounts aren't billed as members — this page is billing-focused.
+  const billedMembers = useMemo(() => members.filter((m) => m.tier !== 'Daily'), [members])
+
+  const active = billedMembers.filter((m) => m.status === 'active')
+  const pastDue = billedMembers.filter((m) => m.paymentStatus === 'past_due')
   const mrr = active.reduce((s, m) => s + m.amount, 0)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return members
-    return members.filter((m) => `${m.name} ${m.email} ${m.tier}`.toLowerCase().includes(q))
-  }, [members, search])
+    if (!q) return billedMembers
+    return billedMembers.filter((m) => `${m.name} ${m.email} ${m.tier}`.toLowerCase().includes(q))
+  }, [billedMembers, search])
+
+  const messagingMember = messagingId ? (members.find((m) => m.id === messagingId) ?? null) : null
 
   return (
     <>
@@ -24,7 +31,7 @@ export default function Members() {
         <StatCard value={active.length} label="active members" />
         <StatCard value={pastDue.length} label="past due" />
         <StatCard value={`$${mrr}`} label="monthly recurring, active" />
-        <StatCard value={members.length} label="total accounts" />
+        <StatCard value={billedMembers.length} label="total accounts" />
       </StatStrip>
 
       <div className="flex gap-2.5 mb-5 flex-wrap items-center">
@@ -35,6 +42,16 @@ export default function Members() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
+
+      {messagingMember && (
+        <div className="mb-7 max-w-[560px]">
+          <ContactClientPanel
+            member={messagingMember}
+            defaultTemplate={messagingMember.paymentStatus === 'past_due' ? 'past_due_payment' : 'promotion'}
+            onClose={() => setMessagingId(null)}
+          />
+        </div>
+      )}
 
       <DataTable>
         <table>
@@ -50,7 +67,10 @@ export default function Members() {
           <tbody>
             {filtered.map((m) => (
               <tr key={m.id}>
-                <td className="px-4 py-3 border-b border-line text-[13.5px]">{m.name}</td>
+                <td className="px-4 py-3 border-b border-line text-[13.5px]">
+                  {m.name}
+                  {hasOverdueBoard(m.name, boards) && <span className="text-rust font-semibold"> · board overdue</span>}
+                </td>
                 <td className="px-4 py-3 border-b border-line text-[13.5px]">{m.tier}</td>
                 <td className="px-4 py-3 border-b border-line text-[13.5px]">{fmt(m.nextBilling)}</td>
                 <td className="px-4 py-3 border-b border-line text-[13.5px]">
@@ -65,6 +85,7 @@ export default function Members() {
                     <MiniBtn tone={m.status === 'active' ? 'warn' : 'checkin'} onClick={() => toggleMemberStatus(m.id)}>
                       {m.status === 'active' ? 'Stop membership' : 'Reactivate'}
                     </MiniBtn>
+                    <MiniBtn onClick={() => setMessagingId(m.id)}>Message</MiniBtn>
                   </div>
                 </td>
               </tr>
@@ -79,6 +100,22 @@ export default function Members() {
           </tbody>
         </table>
       </DataTable>
+
+      {messageLog.length > 0 && (
+        <div className="mt-9">
+          <h2 className="text-[16px] mb-3">Recent messages</h2>
+          <ul className="list-none p-0 m-0 border-t border-line">
+            {messageLog.map((msg) => (
+              <li key={msg.id} className="py-2.5 border-b border-line text-[13.5px] flex justify-between gap-3 text-ink-soft">
+                <span>
+                  <b className="text-ink">{msg.memberName}</b> — {msg.subject} ({msg.channel === 'email' ? 'email' : 'text'})
+                </span>
+                <span>{msg.date}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   )
 }

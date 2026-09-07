@@ -6,17 +6,21 @@ import { useAppState } from '../../state/AppState'
 import { TIERS } from '../../lib/mockData'
 import { fmt } from '../../lib/format'
 
+const DAILY_OPTION = 'Daily'
+
 export default function Join() {
   const navigate = useNavigate()
   const { joinSuccess, joinAsMember, signInAs } = useAppState()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [tier, setTier] = useState(TIERS[0].name)
+  const [tier, setTier] = useState(DAILY_OPTION)
+
+  const isDaily = tier === DAILY_OPTION
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    joinAsMember({ name, email, tier })
+    joinAsMember({ name, email, phone, tier })
   }
 
   if (joinSuccess) {
@@ -24,10 +28,17 @@ export default function Join() {
       <>
         <SectionHead title="Welcome to the Society" />
         <div className="bg-kelp/10 border border-kelp rounded-xl p-5.5">
-          <p className="m-0 mb-2.5">
-            <b>{joinSuccess.name}</b> is signed up on the <b>{joinSuccess.tier}</b> plan. First charge of{' '}
-            <b>${joinSuccess.amount}</b> is scheduled for <b>{fmt(joinSuccess.nextBilling)}</b>.
-          </p>
+          {joinSuccess.tier === DAILY_OPTION ? (
+            <p className="m-0 mb-2.5">
+              <b>{joinSuccess.name}</b> has a Surf Society account for daily rentals — no membership, pay per visit
+              at pickup.
+            </p>
+          ) : (
+            <p className="m-0 mb-2.5">
+              <b>{joinSuccess.name}</b> is signed up on the <b>{joinSuccess.tier}</b> plan. First charge of{' '}
+              <b>${joinSuccess.amount}</b> is scheduled for <b>{fmt(joinSuccess.nextBilling)}</b>.
+            </p>
+          )}
           <Btn
             variant="primary"
             onClick={() => {
@@ -71,8 +82,9 @@ export default function Join() {
               <Field label="Phone">
                 <TextInput required placeholder="(858) 555-0100" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </Field>
-              <Field label="Membership tier">
+              <Field label="Account type">
                 <Select value={tier} onChange={(e) => setTier(e.target.value)}>
+                  <option value={DAILY_OPTION}>Daily rental — no membership</option>
                   {TIERS.map((t) => (
                     <option key={t.name} value={t.name}>
                       {t.name} — ${t.price}/mo
@@ -81,9 +93,14 @@ export default function Join() {
                 </Select>
               </Field>
             </div>
+            <p className="text-ink-soft text-[13px] mt-3">
+              {isDaily
+                ? "You'll pay per rental at pickup — no monthly fee, no included days. Switch to a membership any time."
+                : `$${TIERS.find((t) => t.name === tier)?.price}/month, billed until you cancel.`}
+            </p>
             <div className="flex gap-2.5 mt-5">
               <Btn type="submit" variant="gold">
-                Join now
+                {isDaily ? 'Create account' : 'Join now'}
               </Btn>
             </div>
           </form>

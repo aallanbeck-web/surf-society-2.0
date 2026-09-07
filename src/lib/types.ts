@@ -16,6 +16,15 @@ export interface Board {
   dueBack?: string | null
   /** True when a checked-out board is past its expected return. */
   isPastDue?: boolean
+  /** Staff-only notes about this board — condition flags, damage reports, etc. */
+  staffNotes: Note[]
+}
+
+/** A single timestamped staff annotation — reused for both member and board notes. */
+export interface Note {
+  id: number
+  text: string
+  date: string
 }
 
 export type MemberStatus = 'active' | 'inactive'
@@ -38,6 +47,8 @@ export interface Member {
   id: number
   name: string
   email: string
+  phone: string
+  /** Tier name (Swell/Local/Society), or 'Daily' for a non-membership pay-per-rental account. */
   tier: string
   status: MemberStatus
   paymentStatus: PaymentStatus
@@ -46,8 +57,10 @@ export interface Member {
   amount: number
   history: BillingHistoryEntry[]
   rentalHistory: RentalHistoryEntry[]
-  /** Rental days used against this month's included allowance (resets each billing cycle). */
+  /** Rental days used against this month's included allowance (resets each billing cycle). Not applicable to Daily accounts. */
   daysUsedThisMonth: number
+  /** Staff-only notes about this customer. */
+  staffNotes: Note[]
 }
 
 export interface Review {
@@ -86,6 +99,16 @@ export interface RentalPricing {
   hourly: number
   daily: number
   weekly: number
+}
+
+export interface SentMessage {
+  id: number
+  memberName: string
+  channel: 'email' | 'text'
+  destination: string
+  subject: string
+  body: string
+  date: string
 }
 
 export interface Reservation {

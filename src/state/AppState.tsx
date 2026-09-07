@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { Board, Member, Review, ActivityEntry, Reservation } from '../lib/types'
+import type { Board, Member, Review, ActivityEntry, Reservation, SentMessage } from '../lib/types'
 import { addDays, fmtISODate } from '../lib/format'
 import {
   initialBoards,
@@ -31,6 +31,8 @@ interface NewReviewInput {
 interface JoinInput {
   name: string
   email: string
+  phone: string
+  /** A TIERS name (Swell/Local/Society), or 'Daily' for a non-membership pay-per-rental account. */
   tier: string
 }
 
@@ -46,9 +48,22 @@ interface ReservationResult {
   reason?: string
 }
 
-/** A member is eligible to have a board checked out to them: active membership, payment current. */
-export function isMemberEligible(member: Member): boolean {
-  return member.status === 'active' && member.paymentStatus === 'current'
+interface SendMessageInput {
+  memberName: string
+  channel: 'email' | 'text'
+  destination: string
+  subject: string
+  body: string
+}
+
+/** True when a member currently has a checked-out board that's past its expected return. */
+export function hasOverdueBoard(memberName: string, boards: Board[]): boolean {
+  return boards.some((b) => b.status === 'out' && b.outTo === memberName && b.isPastDue)
+}
+
+/** A member is eligible to have a board checked out to them: active, payment current, nothing overdue. */
+export function isMemberEligible(member: Member, boards: Board[]): boolean {
+  return member.status === 'active' && member.paymentStatus === 'current' && !hasOverdueBoard(member.name, boards)
 }
 
 interface AppStateValue {
@@ -58,6 +73,7 @@ interface AppStateValue {
   reviews: Review[]
   activity: ActivityEntry[]
   reservations: Reservation[]
+  messageLog: SentMessage[]
   rentalPricing: typeof initialRentalPricing
   currentMemberView: string
   joinSuccess: Member | null
@@ -76,6 +92,9 @@ interface AppStateValue {
   joinAsMember: (input: JoinInput) => void
   addReview: (input: NewReviewInput) => void
   createReservation: (input: NewReservationInput) => ReservationResult
+  addMemberNote: (memberId: number, text: string) => void
+  addBoardNote: (boardId: number, text: string) => void
+  sendClientMessage: (input: SendMessageInput) => void
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -86,6 +105,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews)
   const [activity, setActivity] = useState<ActivityEntry[]>(initialActivity)
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations)
+  const [messageLog, setMessageLog] = useState<SentMessage[]>([])
   const [currentMemberView, setCurrentMemberView] = useState('Priya Nair')
   const [joinSuccess, setJoinSuccess] = useState<Member | null>(null)
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -93,8 +113,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const checkOutBoard = (boardId: number, memberName: string) => {
     const member = members.find((m) => m.name === memberName)
     // Defense in depth — the staff UI only ever offers eligible members, but never let an
-    // inactive or past-due account walk out with a board even if this gets called directly.
-    if (!member || !isMemberEligible(member)) return
+    // inactive, past-due, or already-overdue account walk out with another board.
+    if (!member || !isMemberEligible(member, boards)) return
 
     setBoards((prev) =>
       prev.map((b) =>
@@ -124,7 +144,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const addBoard = (input: NewBoardInput) => {
     setBoards((prev) => {
       const newId = Math.max(0, ...prev.map((b) => b.id)) + 1
-      return [...prev, { id: newId, ...input, status: 'available', tint: '#3F6B5E' }]
+      return [...prev, { id: newId, ...input, status: 'available', tint: '#3F6B5E', staffNotes: [] }]
     })
   }
 
@@ -144,22 +164,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }
 
   const joinAsMember = (input: JoinInput) => {
-    const tier = TIERS.find((t) => t.name === input.tier)!
+    // 'Daily' is a non-membership, pay-per-rental account — not one of the paid TIERS.
+    const tier = TIERS.find((t) => t.name === input.tier)
     setMembers((prev) => {
       const newId = Math.max(0, ...prev.map((m) => m.id)) + 1
       const newMember: Member = {
         id: newId,
         name: input.name,
         email: input.email,
+        phone: input.phone,
         tier: input.tier,
         status: 'active',
         paymentStatus: 'current',
         joined: 'Aug 2026',
         nextBilling: JOIN_NEXT_BILLING,
-        amount: tier.price,
-        history: [{ date: 'Aug 30', desc: `${input.tier} membership — signup`, amount: tier.price, status: 'Paid' }],
+        amount: tier ? tier.price : 0,
+        history: tier ? [{ date: 'Aug 30', desc: `${input.tier} membership — signup`, amount: tier.price, status: 'Paid' }] : [],
         rentalHistory: [],
         daysUsedThisMonth: 0,
+        staffNotes: [],
       }
       setJoinSuccess(newMember)
       return [...prev, newMember]
@@ -213,6 +236,33 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return { ok: true }
   }
 
+  const addMemberNote = (memberId: number, text: string) => {
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id !== memberId) return m
+        const newId = Math.max(0, ...m.staffNotes.map((n) => n.id)) + 1
+        return { ...m, staffNotes: [{ id: newId, text, date: 'Just now' }, ...m.staffNotes] }
+      }),
+    )
+  }
+
+  const addBoardNote = (boardId: number, text: string) => {
+    setBoards((prev) =>
+      prev.map((b) => {
+        if (b.id !== boardId) return b
+        const newId = Math.max(0, ...b.staffNotes.map((n) => n.id)) + 1
+        return { ...b, staffNotes: [{ id: newId, text, date: 'Just now' }, ...b.staffNotes] }
+      }),
+    )
+  }
+
+  const sendClientMessage = (input: SendMessageInput) => {
+    setMessageLog((prev) => {
+      const newId = Math.max(0, ...prev.map((m) => m.id)) + 1
+      return [{ id: newId, ...input, date: 'Just now' }, ...prev]
+    })
+  }
+
   const currentMember = members.find((m) => m.name === currentMemberView) ?? members[0]
 
   const value = useMemo<AppStateValue>(
@@ -222,6 +272,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       reviews,
       activity,
       reservations,
+      messageLog,
       rentalPricing: initialRentalPricing,
       currentMemberView,
       joinSuccess,
@@ -236,9 +287,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       joinAsMember,
       addReview,
       createReservation,
+      addMemberNote,
+      addBoardNote,
+      sendClientMessage,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boards, members, reviews, activity, reservations, currentMemberView, joinSuccess, isSignedIn, currentMember],
+    [boards, members, reviews, activity, reservations, messageLog, currentMemberView, joinSuccess, isSignedIn, currentMember],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

@@ -1,21 +1,26 @@
 import { useMemo, useState } from 'react'
 import { Btn, MiniBtn, Pill, Select, SectionHead } from '../../components/ui'
 import QrCode from '../../components/QrCode'
+import NotesPanel from '../../components/NotesPanel'
+import ContactClientPanel from '../../components/ContactClientPanel'
 import { isMemberEligible, useAppState } from '../../state/AppState'
 import { svgBoard } from '../../lib/svgBoard'
 import { fmtISODate, todayISO } from '../../lib/format'
 
 export default function BoardWall() {
-  const { boards, members, activity, reservations, checkOutBoard, checkInBoard } = useAppState()
+  const { boards, members, activity, reservations, checkOutBoard, checkInBoard, addBoardNote } = useAppState()
   const [search, setSearch] = useState('')
   const [openCheckoutFor, setOpenCheckoutFor] = useState<number | null>(null)
+  const [notesOpenFor, setNotesOpenFor] = useState<number | null>(null)
   const [showAddMember, setShowAddMember] = useState(false)
+  const [messagingMemberName, setMessagingMemberName] = useState<string | null>(null)
   const joinUrl = `${window.location.origin}/join`
 
-  const eligibleMembers = useMemo(() => members.filter(isMemberEligible), [members])
+  const eligibleMembers = useMemo(() => members.filter((m) => isMemberEligible(m, boards)), [members, boards])
   const [checkoutMember, setCheckoutMember] = useState(eligibleMembers[0]?.name ?? '')
 
   const pastDueBoards = useMemo(() => boards.filter((b) => b.status === 'out' && b.isPastDue), [boards])
+  const messagingMember = messagingMemberName ? members.find((m) => m.name === messagingMemberName) ?? null : null
 
   const upcomingReservationsByBoard = useMemo(() => {
     const today = todayISO()
@@ -62,14 +67,27 @@ export default function BoardWall() {
           <h2 className="text-[15px] font-semibold text-rust mb-3">Boards past due ({pastDueBoards.length})</h2>
           <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {pastDueBoards.map((b) => (
-              <li key={b.id} className="flex justify-between flex-wrap gap-1 text-[13.5px]">
+              <li key={b.id} className="flex justify-between flex-wrap gap-2 text-[13.5px] items-center">
                 <span>
                   <b>{b.name}</b> — with {b.outTo}
                 </span>
-                <span className="text-ink-soft">Due back {b.dueBack}</span>
+                <span className="flex items-center gap-3">
+                  <span className="text-ink-soft">Due back {b.dueBack}</span>
+                  {b.outTo && (
+                    <MiniBtn tone="warn" onClick={() => setMessagingMemberName(b.outTo!)}>
+                      Notify {b.outTo}
+                    </MiniBtn>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {messagingMember && (
+        <div className="mb-7">
+          <ContactClientPanel member={messagingMember} defaultTemplate="overdue_board" onClose={() => setMessagingMemberName(null)} />
         </div>
       )}
 
@@ -136,8 +154,8 @@ export default function BoardWall() {
               {openCheckoutFor === b.id &&
                 (eligibleMembers.length === 0 ? (
                   <div className="text-xs text-rust mt-2.5">
-                    No members in good standing to check this board out to — every account is either inactive or
-                    past due.
+                    No members in good standing to check this board out to — every account is either inactive,
+                    past due, or already has an overdue board.
                   </div>
                 ) : (
                   <div className="flex gap-1.5 mt-2.5">
@@ -155,6 +173,20 @@ export default function BoardWall() {
                     </MiniBtn>
                   </div>
                 ))}
+              <div className="mt-2.5">
+                <MiniBtn onClick={() => setNotesOpenFor(notesOpenFor === b.id ? null : b.id)}>
+                  Notes ({b.staffNotes.length})
+                </MiniBtn>
+              </div>
+              {notesOpenFor === b.id && (
+                <div className="mt-2.5 border-t border-line pt-2.5">
+                  <NotesPanel
+                    notes={b.staffNotes}
+                    onAdd={(text) => addBoardNote(b.id, text)}
+                    placeholder="Note condition or damage..."
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
